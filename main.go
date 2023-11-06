@@ -5,24 +5,6 @@ import (
 	"math"
 )
 
-func main() {
-	n := 5
-	eps := 1e-6
-	kmax := 1000
-	wValues := []float64{1, 0.5, 1.5}
-
-	A := generateMatrix(n)
-	b := generateVector(n)
-	x := make([]float64, n)
-	// xPrev := make([]float64, n)
-
-	for _, w := range wValues {
-		x = solveSystem(n, A, b, eps, kmax, w)
-		fmt.Printf("Метод релаксации с w = %f\n", w)
-		printSolution(x)
-	}
-}
-
 func generateMatrix(n int) [][]float64 {
 	A := make([][]float64, n)
 	for i := 0; i < n; i++ {
@@ -78,5 +60,23 @@ func printSolution(x []float64) {
 	fmt.Println("Приближенное решение:")
 	for i, value := range x {
 		fmt.Printf("x[%d] = %f\n", i+1, value)
+	}
+}
+
+func main() {
+	n := 5
+	eps := 1e-6
+	kmax := 1000
+	wValues := []float64{1, 0.5, 1.5}
+
+	A := generateMatrix(n)
+	b := generateVector(n)
+	x := make([]float64, n)
+	// xPrev := make([]float64, n)
+
+	for _, w := range wValues {
+		x = solveSystem(n, A, b, eps, kmax, w)
+		fmt.Printf("Метод релаксации с w = %f\n", w)
+		printSolution(x)
 	}
 }
