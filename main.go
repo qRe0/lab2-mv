@@ -23,7 +23,7 @@ func GenerateMatrixA(n int) [][]float64 {
 		A[i][i] = 10.0 * math.Sqrt(math.Pow(float64(i+1), 3))
 		for j := 0; j < n; j++ {
 			if i != j {
-				A[i][j] = 0.001 / math.Pow(float64(j+1), 0.3)
+				A[i][j] = 0.001 * (float64(i+1) / math.Pow(float64(j+1), 0.3))
 			}
 		}
 	}
@@ -113,7 +113,7 @@ func JacobiMethod(A [][]float64, b []float64, n int) ([]float64, time.Duration) 
 	return X, elapsedTime
 }
 
-// Метод Гаусса-Зейделя (w = 1)
+// Метод Гаусса-Зейделя
 func GaussSeidelMethod(A [][]float64, b []float64, n int) ([]float64, time.Duration) {
 	startTime := time.Now()
 	X := make([]float64, n) // Начальное приближение
@@ -178,8 +178,6 @@ func RelaxationMethod(A [][]float64, b []float64, w float64, n int) []float64 {
 func printMatrix(matrix [][]float64, b []float64, n int) {
 	maxRows := 8
 	maxCols := 8
-
-	// fmt.Printf("%v\n", b)
 
 	for i := 0; i < min(n, maxRows); i++ {
 		for j := 0; j < min(n, maxCols); j++ {
