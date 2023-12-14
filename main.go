@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"time"
 )
 
 const (
 	eps  = 1e-6 // Порог точности
-	kmax = 1000 // Максимальное количество итераций
-	N    = 7    // Размерность матрицы
+	kmax = 100  // Максимальное количество итераций
+	N    = 15   // Размерность матрицы
 )
 
 // Функция для генерации матрицы A
@@ -49,6 +50,7 @@ func GenerateVectorB(A [][]float64, n int) []float64 {
 	return b
 }
 
+// Функция для проверки матрицы на строгую диагональную доминированность
 func IsStrictlyDiagonallyDominant(A [][]float64) bool {
 	n := len(A)
 
@@ -68,6 +70,34 @@ func IsStrictlyDiagonallyDominant(A [][]float64) bool {
 	}
 
 	return true // Строго диагонально доминирующая матрица
+}
+
+// Модифицикация матрицы A
+func ModifyMatrixForDiagonalDomination(A [][]float64) {
+	n := len(A)
+
+	dominantRow := rand.Intn(n)
+
+	sum := 0.0
+	for j := 0; j < n; j++ {
+		if j != dominantRow {
+			sum += math.Abs(A[dominantRow][j])
+		}
+	}
+
+	A[dominantRow][dominantRow] = sum + 1.0
+
+	for i := 0; i < n; i++ {
+		if i != dominantRow {
+			sum = 0.0
+			for j := 0; j < n; j++ {
+				if j != i {
+					sum += math.Abs(A[i][j])
+				}
+			}
+			A[i][i] = sum
+		}
+	}
 }
 
 // Функция для вычисления суммы элементов A * X, исключая элемент с индексом excludeIndex
@@ -116,32 +146,47 @@ func JacobiMethod(A [][]float64, b []float64, n int) ([]float64, time.Duration) 
 // Метод Гаусса-Зейделя
 func GaussSeidelMethod(A [][]float64, b []float64, n int) ([]float64, time.Duration) {
 	startTime := time.Now()
-	X := make([]float64, n) // Начальное приближение
 
-	k := 0
-	for k < kmax {
-		for i := 0; i < n; i++ {
-			sum := SumAx(A, X, i)
-			X[i] = (b[i] - sum) / A[i][i]
-		}
+	x := make([]float64, n)
+	xPrev := make([]float64, n)
 
-		maxDiff := 0.0
-		for i := 0; i < n; i++ {
-			maxDiff = math.Max(maxDiff, math.Abs(X[i]))
-		}
-
-		k++
-
-		if maxDiff < eps {
-			elapsedTime := time.Since(startTime)
-			fmt.Printf("Gauss-Seidel method: the required accuracy per iteration is achieved on iter %d\n", k)
-			return X, elapsedTime
-		}
+	for i := 0; i < n; i++ {
+		x[i] = 0 // Начальное приближение
 	}
 
-	elapsedTime := time.Since(startTime)
-	fmt.Printf("Gauss-Seidel method: the maximum number of iterations reached (%d)\n", kmax)
-	return X, elapsedTime
+	for iter := 1; ; iter++ {
+		copy(xPrev, x)
+
+		for i := 0; i < n; i++ {
+			sum := 0.0
+			for j := 0; j < n; j++ {
+				if j != i {
+					sum += A[i][j] * x[j]
+				}
+			}
+			x[i] = (b[i] - sum) / A[i][i]
+		}
+
+		convergence := true
+		for i := 0; i < n; i++ {
+			if math.Abs(x[i]-xPrev[i]) > eps {
+				convergence = false
+				break
+			}
+		}
+
+		if convergence {
+			fmt.Printf("Gauss-Seidel: the required accuracy per iteration has been achieved on iter %d\n", iter)
+			duration := time.Since(startTime)
+			return x, duration
+		}
+
+		if iter > kmax {
+			fmt.Printf("Gauss-Seidel method: the maximum number of iterations reached (%d)\n", kmax)
+			duration := time.Since(startTime)
+			return x, duration
+		}
+	}
 }
 
 // Метод релаксации
@@ -315,6 +360,104 @@ func main() {
 	errorGaussSeidel := RelativeError(xTrue, solutionGaussSeidel)
 	errorRelaxation1 := RelativeError(xTrue, solutionRelaxation1)
 	errorRelaxation2 := RelativeError(xTrue, solutionRelaxation2)
+
+	// Вывод результатов
+	fmt.Printf("Cubic norm of difference (Jacobi method): %10.6f\n", normJacobi)
+	fmt.Printf("Relative error (Jacobi method): %10.6f\n", errorJacobi)
+
+	fmt.Printf("Cubic norm of difference (Gauss-Seidel method): %10.6f\n", normGaussSeidel)
+	fmt.Printf("Relative error (Gauss-Seidel method): %10.6f\n", errorGaussSeidel)
+
+	fmt.Printf("Cubic norm of difference (relaxation method, w = 0.5): %10.6f\n", normRelaxation1)
+	fmt.Printf("Relative error (relaxation method, w = 0.5): %10.6f\n", errorRelaxation1)
+
+	fmt.Printf("Cubic norm of difference (relaxation method, w = 1.5): %10.6f\n", normRelaxation2)
+	fmt.Printf("Relative error (relaxation method, w = 1.5): %10.6f\n", errorRelaxation2)
+
+	//Write line in "------------------" in console
+	fmt.Println()
+	fmt.Println("----------------------------------------------------------")
+	fmt.Println()
+
+	//Modify matrix A for diagonal domination
+	ModifyMatrixForDiagonalDomination(A)
+
+	// Вывод матрицы A и вектора b
+	fmt.Println("Matrix A:")
+	printMatrix(A, b, N)
+
+	isStrictlyDiagonallyDominant = IsStrictlyDiagonallyDominant(A)
+	if isStrictlyDiagonallyDominant {
+		fmt.Println("The matrix is strictly diagonally dominant.")
+	} else {
+		fmt.Println("The matrix is not strictly diagonally dominant.")
+	}
+
+	fmt.Println()
+	fmt.Println()
+
+	// Решение системы методами
+	solutionJacobi, timeJacobi = JacobiMethod(A, b, N)
+	solutionGaussSeidel, timeGS = GaussSeidelMethod(A, b, N)
+	solutionRelaxation1 = RelaxationMethod(A, b, 0.5, N)
+	solutionRelaxation2 = RelaxationMethod(A, b, 1.5, N)
+
+	// Вычисление точного решения (x*)
+	xTrue = make([]float64, len(b))
+	copy(xTrue, b)
+	fmt.Println()
+	fmt.Println()
+
+	// Вывод точного решения
+	fmt.Print("Precise solution (x*): ")
+	for _, x := range xTrue {
+		fmt.Printf("%10.6f ", x)
+	}
+	fmt.Println()
+
+	// Вывод приближенных решений
+	fmt.Print("Approximate solution by the Jacobi method: ")
+	for _, x := range solutionJacobi {
+		fmt.Printf("%10.6f ", x)
+	}
+	fmt.Println()
+
+	fmt.Print("Approximate solution by the Gauss-Seidel method: ")
+	for _, x := range solutionGaussSeidel {
+		fmt.Printf("%10.6f ", x)
+	}
+	fmt.Println()
+
+	fmt.Print("Approximate solution by the relaxation method (w = 0.5): ")
+	for _, x := range solutionRelaxation1 {
+		fmt.Printf("%10.6f ", x)
+	}
+	fmt.Println()
+
+	fmt.Print("Approximate solution by the relaxation method (w = 1.5): ")
+	for _, x := range solutionRelaxation2 {
+		fmt.Printf("%10.6f ", x)
+	}
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+
+	// Вывод времени работы методов
+	fmt.Printf("Jacobi method: %v\n", timeJacobi)
+	fmt.Printf("Gauss-Seidel method: %v\n", timeGS)
+	fmt.Println()
+	fmt.Println()
+
+	// Вычисление кубической нормы разности и относительной погрешности
+	normJacobi = CubicNorm(xTrue, solutionJacobi)
+	normGaussSeidel = CubicNorm(xTrue, solutionGaussSeidel)
+	normRelaxation1 = CubicNorm(xTrue, solutionRelaxation1)
+	normRelaxation2 = CubicNorm(xTrue, solutionRelaxation2)
+
+	errorJacobi = RelativeError(xTrue, solutionJacobi)
+	errorGaussSeidel = RelativeError(xTrue, solutionGaussSeidel)
+	errorRelaxation1 = RelativeError(xTrue, solutionRelaxation1)
+	errorRelaxation2 = RelativeError(xTrue, solutionRelaxation2)
 
 	// Вывод результатов
 	fmt.Printf("Cubic norm of difference (Jacobi method): %10.6f\n", normJacobi)
