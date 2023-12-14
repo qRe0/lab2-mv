@@ -224,8 +224,8 @@ func printMatrix(matrix [][]float64, b []float64, n int) {
 	maxRows := 8
 	maxCols := 8
 
-	for i := 0; i < min(n, maxRows); i++ {
-		for j := 0; j < min(n, maxCols); j++ {
+	for i := 0; i < minFunc(n, maxRows); i++ {
+		for j := 0; j < minFunc(n, maxCols); j++ {
 			fmt.Printf("%10.6f ", matrix[i][j])
 		}
 
@@ -248,7 +248,7 @@ func printMatrix(matrix [][]float64, b []float64, n int) {
 	fmt.Println()
 }
 
-// Функция для вычисления кубической нормы разности между двумя векторами
+// CubicNorm Функция для вычисления кубической нормы разности между двумя векторами
 func CubicNorm(x1, x2 []float64) float64 {
 	n := len(x1)
 	norm := 0.0
@@ -258,7 +258,7 @@ func CubicNorm(x1, x2 []float64) float64 {
 	return math.Cbrt(norm)
 }
 
-// Функция для вычисления относительной погрешности
+// RelativeError Функция для вычисления относительной погрешности
 func RelativeError(xTrue, xApprox []float64) float64 {
 	n := len(xTrue)
 	maxAbsXTrue := 0.0
@@ -266,14 +266,14 @@ func RelativeError(xTrue, xApprox []float64) float64 {
 		maxAbsXTrue = math.Max(maxAbsXTrue, math.Abs(xTrue[i]))
 	}
 
-	error := 0.0
+	errorFunc := 0.0
 	for i := 0; i < n; i++ {
-		error = math.Max(error, math.Abs(xTrue[i]-xApprox[i])/maxAbsXTrue)
+		errorFunc = math.Max(errorFunc, math.Abs(xTrue[i]-xApprox[i])/maxAbsXTrue)
 	}
-	return error
+	return errorFunc
 }
 
-func min(a, b int) int {
+func minFunc(a, b int) int {
 	if a < b {
 		return a
 	}
